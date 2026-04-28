@@ -1,16 +1,77 @@
 # Routage-dynamique-OSPF
-OSPF vs RIP : Comprendre les bases du routage dynamique 🌐🔁
-Dans le cadre de mes recherches en réseaux, j'ai analysé les différences fondamentales entre deux protocoles de routage essentiels : l'historique RIP et le performant OSPF.
-Voici un comparatif rapide pour mieux comprendre leurs fonctionnements. 👇
-1️⃣ Les concepts clés
-📖 RIP (Routing Information Protocol) : C'est un protocole à vecteur de distance . Sa métrique est le nombre de sauts . Il choisit le chemin le plus court en traversant le moins de routeurs possible, même s'ils sont lents.
+<img width="945" height="455" alt="image" src="https://github.com/user-attachments/assets/0d42b7a2-aeb7-444e-a20f-eeab493e891b" />
 
-📖 OSPF (Open Shortest Path First) : C'est un protocole à état de lien . Sa métrique est le coût, calculé selon la bande passante . OSPF privilégie le chemin le plus rapide, même s'il traverse plus de routeurs.
-2️⃣ Pourquoi OSPF l'emporte souvent ? ⭐
-OSPF offre des avantages décisifs pour la plupart des infrastructures modernes :
-♾️ Plus de limite de sauts : Contrairement à RIP, qui est bloqué à 15 sauts 🛑, OSPF peut gérer des réseaux immenses sans restriction de taille.
-🏗️ Une meilleure évolutivité : OSPF est conçu pour grandir ! La segmentation en aires permet d'étendre le réseau facilement tout en gardant une structure organisée ☁️.
-⚡ Une convergence ultra-rapide : En cas de panne d'un routeur, OSPF met à jour la carte du réseau quasi instantanément ⏱️, assurant une continuité de service. RIP doit souvent attendre de longues secondes.
-📉 Des mises à jour plus efficaces :
-RIP envoie toute sa table de routage toutes les 30 secondes, ce qui gaspille de la bande passante 🔁.
-OSPF est plus intelligent : il n'envoie que les modifications d'état de lien à son voisin, rendant le trafic de contrôle beaucoup plus léger et rapide.
+	Interface	
+R1	Gig0/0	10.0.41.253
+	Gig0/1	10.0.12.253
+	Gig0/2	
+R2	Gig0/0	10.0.23.254
+	Gig0/1	10.0.12.254
+	Gig0/2	
+R3	Gig0/0	10.0.23.253
+	Gig0/1	10.0.34.253
+	Gig0/2	
+R4	Gig0/0	10.0.41.254
+	Gig0/1	10.0.34.254
+	Gig0/2	
+Mise en œuvre d'une topologie routée multi-zones (OSPF Area 0/1)
+
+1.	IP fixe pour les serveurs   serveur0  192.168.10.2  ,serveur1 192.168.40.2
+2.	Configurer sur les switch les port de vlan et les switchports
+3.	Configurer DHCP pools  avec 192.168.XX.1 comme passerelle par défaut, adresses commençant par 192.168.XX.10  (XX signifie  le numéro de VLAN, ex : pour VLAN 10 ,   192.168.10.10 ) 
+4.	Configurer des sous-interface en 192.168.XX.1 , et IP de serveur en  IP helper-address
+ 
+
+Plan d'adressage
+
+
+
+
+
+
+
+
+
+
+
+
+
+Serveur DHCP	Ip helper-address	Nom de VLAN	Gateway	Adresse réseau	Area 
+
+Server0 	
+192.168.10.2	Vlan 10	192.168.10.1	192.168.20.0/24	Area 1
+		Vlan 30	192.168.30.1	192.168.40.0/24	Area 1
+		Vlan 50	192.168.50.1	192.168.60.0/24	Area 1
+		Vlan 70	192.168.70.1	192.168.80.0/24	Area 1
+
+Serveur DHCP	Ip helper-address 	Nom de VLAN	Gateway	Adresse réseau	Area
+
+Server1 	
+192.168.40.2	Vlan 20	192.168.20.1	192.168.20.0/24	Area 1
+		Vlan 40	192.168.40.1	192.168.40.0/24	Area 1
+		Vlan 60	192.168.60.1	192.168.60.0/24	Area 1
+		Vlan 80	192.168.80.1	192.168.80.0/24	Area 1
+
+	Adresse réseau	
+R1 – R2	10.0.12.0/30	
+Area 0
+R2 – R3	10.0.23.0/30	
+R3 – R4	10.0.34.0/30	
+R4 – R1	10.0.41.0/30	
+
+
+
+Configuration du protocole OSPF sur le routeur4
+Router(config)#router ospf 4
+Router(config)#network 10.0.41.254  0.0.0.3 area 0
+Router(config)#network 10.0.34.254  0.0.0.3 area 0
+Router(config)#network 192.168.10.1  0.0.0.255 area 1
+Router(config)#network 192.168.20.1  0.0.0.255 area 1
+
+
+Après la commande show ip route 
+
+ 
+
+O IA : Routes apprises via OSPF provenant d'autres zones (Inter-Area)
+
